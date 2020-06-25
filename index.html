@@ -29,6 +29,8 @@
       color: white;
       text-align: center;
       align-items: center;
+      /* Safari transitionend event.propertyName === flex */
+      /* Chrome + FF transitionend event.propertyName === flex-grow */
       transition:
         font-size 0.7s cubic-bezier(0.61,-0.19, 0.7,-0.11),
         flex 0.7s cubic-bezier(0.61,-0.19, 0.7,-0.11),
@@ -82,12 +84,20 @@
       transition: transform 0.5s;
     }
     .controls:first-child {
-      transform: translateX(-100%); /* hide controls to transform in when opening canvas*/
+      transform: translateX(-100%);
     } 
     .controls:last-child {
-      transform: translateX(100%); /* hide controls to transform in when opening canvas*/
+      transform: translateX(100%);
     } 
     
+    
+    .panel2.open{
+      flex: 10;
+    }
+    
+    .panel.open > .controls:first-child, .panel.open > .controls:last-child{
+      transform: translateX(0);
+    }
     
   </style>
 
@@ -97,11 +107,11 @@
       <div class="inner-panel controls">
         <div>
           <label for="strokeStyle">Color:</label> <br/>
-          <input type="color" name="strokeStyle" id="strokeStyle" />
+          <input type="color" name="strokeStyle" id="strokeStyle" value="#BADA55"/>
         </div>
         <div>
           <label for="line-width">Line-width:</label><br/>
-          <input type="range" name="lineWidth" id="line-width" />
+          <input type="range" name="lineWidth" id="line-width" min="1" max="100" value="3" />
         </div>
       </div>
       <div class="inner-panel">Let's<br/>-></div>
@@ -116,7 +126,7 @@
         <p>
           lineJoin:<br />
           <label for="round">            
-            <input type="radio" name="lineJoin" id="round" value="round" />
+            <input type="radio" name="lineJoin" id="round" value="round" checked />
             Round
           </label>
           <label for="bevel">
@@ -135,7 +145,7 @@
             Butt
           </label>
           <label for="round">
-            <input type="radio" name="lineCap" id="round" value="round" />
+            <input type="radio" name="lineCap" id="round" value="round" checked/>
             Round
           </label>
           <label for="square">
@@ -147,6 +157,74 @@
     </div>
     
   </div>
+
+  <script>
+    const panel2 = document.querySelector('.panel2');
+    const allPanels = document.querySelectorAll('.panel');
+    const canvas = document.querySelector('#canvas');
+    const color = document.querySelector('#color');
+    const inputs = document.querySelectorAll('input');
+    
+
+    
+
+    function openCanvas() {
+      //console.log('opened');
+      
+      this.classList.add('open');
+      
+    }
+    
+    function dropControls(e) {
+      canvas.width = canvas.parentElement.offsetWidth;
+      canvas.height = canvas.parentElement.offsetHeight;
+      let ctx = canvas.getContext('2d');
+      console.log(ctx);
+      let isDrawing = false;
+      let lastX = 0;
+      let lastY = 0;
+      // ctx.strokeStyle = '#BADA55'; //specifies the color, gradient, or pattern to use for the strokes (outlines) around shapes
+      // ctx.lineJoin = 'round'; //the shape used to join two line segments where they meet
+      // ctx.lineCap = 'round'; //determines the shape used to draw the end points of lines
+      inputs.forEach(input => ctx[input.name] = input.value);// set default values
+      if (e.propertyName.includes('flex')) {
+        allPanels.forEach( panel => {
+          if (!panel.classList.contains(open)) {
+            panel.classList.add('open');
+          }
+        })
+      }
+    }
+
+    function handleDrawing(e) {
+      if (!isDrawing) return;
+      //console.log(e);
+      
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    }
+
+    function update() {
+      ctx[this.name] = this.value;
+    }
+
+    panel2.addEventListener('click', openCanvas);
+    panel2.addEventListener('transitionend', dropControls);
+    canvas.addEventListener('mousemove', handleDrawing);
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('mouseout', () => isDrawing = false);
+    inputs.forEach(input => input.addEventListener('change', update));
+
+  </script>
+
+
 
 </body>
 </html>
